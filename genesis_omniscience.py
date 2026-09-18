@@ -100,7 +100,7 @@ class MultiModelOrchestrator:
         self.model_stats = {m: {"calls": 0, "avg_latency": 0, "quality": 0} for m in self.models}
         self.active_model = "llama"
 
-    async def intelligent_route(self, prompt: str, required_capability: str = None) -> str:
+    async def intelligent_route(self, prompt: str, required_capability: str = None) -> Dict:
         """智能路由到最适合的模型"""
         # Build list of enabled models
         enabled_models = [m for m in self.models if self.models[m].get("enabled", True)]
@@ -122,7 +122,10 @@ class MultiModelOrchestrator:
             # Use first enabled model as fallback
             self.active_model = enabled_models[0]
 
-        return self.models[self.active_model]
+        # Include model name in returned config
+        config = self.models[self.active_model].copy()
+        config["name"] = self.active_model
+        return config
 
     async def ensemble_predict(self, prompt: str, models_to_use: List[str] = None) -> Dict[str, str]:
         """集合预测 - 多模型投票"""
@@ -512,9 +515,10 @@ class GenesisOmniscience:
     async def _query_with_recovery(self, query: str, model_config: Dict) -> str:
         """带恢复的查询"""
         try:
+            model_name = model_config.get("name", "llama")
             client = OpenAI(api_key="not-needed", base_url=model_config["base_url"])
             response = client.chat.completions.create(
-                model="llama",
+                model=model_name,
                 messages=[{"role": "user", "content": query}],
                 max_tokens=4096,
                 temperature=0.7

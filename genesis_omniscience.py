@@ -523,12 +523,17 @@ Provide the optimal synthesis."""
             if stream:
                 full_response = ""
                 for chunk in response:
-                    if chunk.choices[0].delta.content:
-                        full_response += chunk.choices[0].delta.content
-                        print(chunk.choices[0].delta.content, end="", flush=True)
+                    try:
+                        content = getattr(chunk.choices[0].delta, 'content', None)
+                        if content:
+                            full_response += content
+                            print(content, end="", flush=True)
+                    except (AttributeError, IndexError):
+                        continue
                 print()
             else:
                 full_response = response.choices[0].message.content
+                print(full_response)
 
             self.conversation_history.append({"role": "assistant", "content": full_response})
 

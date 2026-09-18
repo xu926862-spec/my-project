@@ -102,6 +102,12 @@ class MultiModelOrchestrator:
 
     async def intelligent_route(self, prompt: str, required_capability: str = None) -> str:
         """智能路由到最适合的模型"""
+        # Build list of enabled models
+        enabled_models = [m for m in self.models if self.models[m].get("enabled", True)]
+
+        if not enabled_models:
+            raise ValueError("No enabled models configured. Check genesis.config.json")
+
         # 根据提示词复杂度和需要的能力选择模型
         preferred = "llama"  # default
         if "深度思考" in prompt or "reasoning" in prompt:
@@ -109,15 +115,12 @@ class MultiModelOrchestrator:
         elif "快速" in prompt or "quick" in prompt:
             preferred = "local"
 
-        # Check if preferred model is enabled, otherwise fallback
-        if self.models.get(preferred, {}).get("enabled", True):
+        # Select preferred model if it exists and is enabled
+        if preferred in enabled_models:
             self.active_model = preferred
         else:
-            # Find first enabled model
-            for model_name in self.models:
-                if self.models[model_name].get("enabled", True):
-                    self.active_model = model_name
-                    break
+            # Use first enabled model as fallback
+            self.active_model = enabled_models[0]
 
         return self.models[self.active_model]
 

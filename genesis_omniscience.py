@@ -73,11 +73,14 @@ class OmniverseLogger:
         self.logger.addHandler(fh)
 
     def log(self, level: str, message: str, metadata: Dict = None):
-        """记录带元数据的事件"""
-        if metadata:
-            message += f" | {json.dumps(metadata, ensure_ascii=False)}"
-        safe_message = message.encode('utf-8', errors='replace').decode('utf-8')
-        getattr(self.logger, level.lower())(safe_message)
+        """记录带元数据的事件（Windows 兼容）"""
+        try:
+            if metadata:
+                message += f" | {json.dumps(metadata, ensure_ascii=False)}"
+            safe_message = ''.join(c if ord(c) < 128 else '?' for c in message)
+            getattr(self.logger, level.lower())(safe_message)
+        except Exception:
+            pass
 
 # ==================== 多模型编排系统 ====================
 

@@ -34,17 +34,17 @@ set CACHE_SIZE=4GB
 
 ### 2. 模型选择优化
 
-**推荐配置:**
+**推荐配置 (文本处理后处理):**
 ```bash
-# 最快方案（Gemma:2b）
+# 最快方案 - 转录输出后处理（Gemma:2b）
 export OMP_NUM_THREADS=16
 ollama run gemma:2b
 
-# 均衡方案（Phi:2b）
+# 均衡方案 - 转录输出后处理（Phi:2.7b）
 export OMP_NUM_THREADS=12
-ollama run phi:2b
+ollama run phi
 
-# 高质量方案（Llama2）
+# 高质量方案 - 转录输出后处理（Llama2）
 export OMP_NUM_THREADS=8
 ollama run llama2
 ```
@@ -140,31 +140,34 @@ cache_hit_rate: 目标 > 60%
 
 ## 快速启动命令
 
-### 方案A：最快速度（推荐用于大量转录）
+### 方案A：最快速度 - 转录后处理（推荐用于批量处理）
 ```bash
 export OMP_NUM_THREADS=16
 export USE_CACHE=1
 export use_fp16=true
 
-ollama run gemma:2b
+# 将转录文本输入到 Gemma 进行处理
+echo "transcribed text here" | ollama run gemma:2b
 ```
 
-### 方案B：均衡性能（推荐用于一般使用）
+### 方案B：均衡性能 - 转录后处理（推荐用于一般使用）
 ```bash
 export OMP_NUM_THREADS=12
 export USE_CACHE=1
 export use_fp16=true
 
-ollama run llama2
+# 将转录文本输入到 Phi 进行处理
+echo "transcribed text here" | ollama run phi
 ```
 
-### 方案C：最高质量（推荐用于精准转录）
+### 方案C：最高质量 - 转录后处理（推荐用于精准处理）
 ```bash
 export OMP_NUM_THREADS=8
 export USE_CACHE=1
 export use_fp16=false
 
-ollama run llama3
+# 将转录文本输入到 Llama2 进行处理
+echo "transcribed text here" | ollama run llama2
 ```
 
 ---
@@ -209,13 +212,15 @@ ollama run llama3
 运行以下命令验证优化：
 ```bash
 # 测试单个转录 (替换 audio_sample.wav 为实际音频文件)
-time openclaw transcribe audio_sample.wav
+time openclaw infer audio transcribe --file audio_sample.wav
 
 # 测试并发处理 (替换 audio*.wav 为实际音频文件)
-for audio_file in audio_sample1.wav audio_sample2.wav audio_sample3.wav; do
-  openclaw transcribe "$audio_file" &
-done
-wait
+time (
+  for audio_file in audio_sample1.wav audio_sample2.wav audio_sample3.wav; do
+    openclaw infer audio transcribe --file "$audio_file" &
+  done
+  wait
+)
 
 # 检查缓存效果
 grep -i "cache_hit" ~/.openclaw/logs/openclaw.log

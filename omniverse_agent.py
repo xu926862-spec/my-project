@@ -65,6 +65,12 @@ class OmniverseAgent:
             )
         """)
 
+        # Migrate existing knowledge table by adding tags column if missing
+        cursor.execute("PRAGMA table_info(knowledge)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'tags' not in columns:
+            cursor.execute("ALTER TABLE knowledge ADD COLUMN tags TEXT DEFAULT '[]'")
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY,

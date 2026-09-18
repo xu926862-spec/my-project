@@ -471,8 +471,6 @@ class GenesisOmniscience:
 
     async def process_query(self, query: str, use_ensemble: bool = False) -> str:
         """处理查询 - 支持单模型或集合模式"""
-        self.request_count += 1
-
         # 添加到知识图谱
         self._extract_and_store_concepts(query)
 
@@ -520,6 +518,7 @@ Provide the optimal synthesis."""
 
     def chat(self, user_input: str, stream: bool = False) -> str:
         """主对话接口"""
+        self.request_count += 1
         start_time = datetime.now()
         self.conversation_history.append({"role": "user", "content": user_input})
 

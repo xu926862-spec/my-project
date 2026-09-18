@@ -87,12 +87,16 @@ class OmniverseLogger:
 class MultiModelOrchestrator:
     """多模型智能编排"""
 
-    def __init__(self):
-        self.models = {
-            "llama": {"base_url": "http://localhost:8000/v1", "capability": "reasoning"},
-            "deepseek": {"base_url": "https://api.deepseek.com", "capability": "advanced_reasoning"},
-            "local": {"base_url": "http://localhost:8000/v1", "capability": "fast"}
-        }
+    def __init__(self, config: Dict = None):
+        # Load models from config if provided, otherwise use defaults
+        if config and "models" in config:
+            self.models = config["models"]
+        else:
+            self.models = {
+                "llama": {"base_url": "http://localhost:8000/v1", "capability": "reasoning"},
+                "deepseek": {"base_url": "https://api.deepseek.com", "capability": "advanced_reasoning"},
+                "local": {"base_url": "http://localhost:8000/v1", "capability": "fast"}
+            }
         self.model_stats = {m: {"calls": 0, "avg_latency": 0, "quality": 0} for m in self.models}
         self.active_model = "llama"
 
@@ -307,14 +311,18 @@ class SelfHealingSystem:
 class MonitoringSystem:
     """实时监控和智能告警"""
 
-    def __init__(self):
+    def __init__(self, config: Dict = None):
         self.metrics_queue = queue.Queue()
         self.alerts: List[SystemEvent] = []
-        self.thresholds = {
-            "response_time": 5.0,
-            "error_rate": 0.05,
-            "quality_score": 7.0
-        }
+        # Load thresholds from config if provided
+        if config and "monitoring" in config and "alert_thresholds" in config["monitoring"]:
+            self.thresholds = config["monitoring"]["alert_thresholds"]
+        else:
+            self.thresholds = {
+                "response_time": 5.0,
+                "error_rate": 0.05,
+                "quality_score": 7.0
+            }
 
     def check_metrics(self, metrics: AgentMetrics) -> List[str]:
         """检查指标并生成告警"""
@@ -431,8 +439,8 @@ class GenesisOmniscience:
         self.client = OpenAI(api_key="not-needed", base_url=base_url)
         self.conversation_history: List[Dict[str, str]] = []
 
-        # 多模型系统
-        self.orchestrator = MultiModelOrchestrator()
+        # 多模型系统 (pass config for orchestrator)
+        self.orchestrator = MultiModelOrchestrator(self.config)
 
         # 知识图谱
         self.knowledge_graph = KnowledgeGraph()
@@ -440,8 +448,8 @@ class GenesisOmniscience:
         # 自愈系统
         self.healing_system = SelfHealingSystem()
 
-        # 监控系统
-        self.monitoring = MonitoringSystem()
+        # 监控系统 (pass config for thresholds)
+        self.monitoring = MonitoringSystem(self.config)
 
         # 自进化引擎
         self.evolution_engine = SelfEvolutionEngine(self)
@@ -478,6 +486,7 @@ class GenesisOmniscience:
             results = await self.orchestrator.ensemble_predict(query)
             return self._synthesize_ensemble_results(results)
         else:
+            self.request_count += 1
             model_config = await self.orchestrator.intelligent_route(query)
             return await self._query_with_recovery(query, model_config)
 

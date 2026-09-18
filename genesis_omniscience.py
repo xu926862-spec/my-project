@@ -103,16 +103,29 @@ class MultiModelOrchestrator:
     async def intelligent_route(self, prompt: str, required_capability: str = None) -> str:
         """智能路由到最适合的模型"""
         # 根据提示词复杂度和需要的能力选择模型
+        preferred = "llama"  # default
         if "深度思考" in prompt or "reasoning" in prompt:
-            self.active_model = "deepseek"
+            preferred = "deepseek"
         elif "快速" in prompt or "quick" in prompt:
-            self.active_model = "local"
+            preferred = "local"
+
+        # Check if preferred model is enabled, otherwise fallback
+        if self.models.get(preferred, {}).get("enabled", True):
+            self.active_model = preferred
+        else:
+            # Find first enabled model
+            for model_name in self.models:
+                if self.models[model_name].get("enabled", True):
+                    self.active_model = model_name
+                    break
 
         return self.models[self.active_model]
 
     async def ensemble_predict(self, prompt: str, models_to_use: List[str] = None) -> Dict[str, str]:
         """集合预测 - 多模型投票"""
-        models = models_to_use or list(self.models.keys())
+        all_models = models_to_use or list(self.models.keys())
+        # Filter to only enabled models
+        models = [m for m in all_models if self.models.get(m, {}).get("enabled", True)]
         tasks = []
 
         for model_name in models:
@@ -314,15 +327,18 @@ class MonitoringSystem:
     def __init__(self, config: Dict = None):
         self.metrics_queue = queue.Queue()
         self.alerts: List[SystemEvent] = []
-        # Load thresholds from config if provided
+        # Default thresholds
+        default_thresholds = {
+            "response_time": 5.0,
+            "error_rate": 0.05,
+            "quality_score": 7.0,
+            "cache_hit_rate": 0.3
+        }
+        # Load thresholds from config if provided, merge with defaults
         if config and "monitoring" in config and "alert_thresholds" in config["monitoring"]:
-            self.thresholds = config["monitoring"]["alert_thresholds"]
+            self.thresholds = {**default_thresholds, **config["monitoring"]["alert_thresholds"]}
         else:
-            self.thresholds = {
-                "response_time": 5.0,
-                "error_rate": 0.05,
-                "quality_score": 7.0
-            }
+            self.thresholds = default_thresholds
 
     def check_metrics(self, metrics: AgentMetrics) -> List[str]:
         """检查指标并生成告警"""
@@ -337,7 +353,7 @@ class MonitoringSystem:
         if metrics.quality_score < self.thresholds["quality_score"]:
             alerts.append(f"⚠️ Quality degradation: {metrics.quality_score}/10")
 
-        if metrics.cache_hit_rate < 0.3:
+        if metrics.cache_hit_rate < self.thresholds["cache_hit_rate"]:
             alerts.append(f"💡 Cache efficiency low: {metrics.cache_hit_rate*100:.1f}%")
 
         for alert in alerts:

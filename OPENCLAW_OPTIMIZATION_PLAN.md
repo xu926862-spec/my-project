@@ -13,9 +13,9 @@
 
 #### CPU 线程配置
 ```bash
-set OMP_NUM_THREADS=16
-set NUMEXPR_NUM_THREADS=16
-set MKL_NUM_THREADS=16
+export OMP_NUM_THREADS=16
+export NUMEXPR_NUM_THREADS=16
+export MKL_NUM_THREADS=16
 ```
 
 #### GPU 加速（如果有 NVIDIA GPU）
@@ -37,13 +37,16 @@ set CACHE_SIZE=4GB
 **推荐配置:**
 ```bash
 # 最快方案（Gemma:2b）
-ollama run gemma:2b --num-thread 16 --num-gpu 1
+export OMP_NUM_THREADS=16
+ollama run gemma:2b
 
 # 均衡方案（Phi:2b）
-ollama run phi:2b --num-thread 16
+export OMP_NUM_THREADS=12
+ollama run phi:2b
 
 # 高质量方案（Llama2）
-ollama run llama2 --num-thread 16 --num-gpu 1
+export OMP_NUM_THREADS=8
+ollama run llama2
 ```
 
 **模型对比:**
@@ -127,7 +130,7 @@ set METRICS_ENABLED=1
 
 #### 监控指标
 ```
-response_time: 目标 < 5秒/分钟音频
+response_time: 目标 5-10秒/分钟音频
 throughput: 目标 > 10个文件/小时
 error_rate: 目标 < 2%
 cache_hit_rate: 目标 > 60%
@@ -139,29 +142,29 @@ cache_hit_rate: 目标 > 60%
 
 ### 方案A：最快速度（推荐用于大量转录）
 ```bash
-set OMP_NUM_THREADS=16
-set USE_CACHE=1
-set use_fp16=true
+export OMP_NUM_THREADS=16
+export USE_CACHE=1
+export use_fp16=true
 
-ollama run gemma:2b --num-thread 16 --num-gpu 1
+ollama run gemma:2b
 ```
 
 ### 方案B：均衡性能（推荐用于一般使用）
 ```bash
-set OMP_NUM_THREADS=12
-set USE_CACHE=1
-set use_fp16=true
+export OMP_NUM_THREADS=12
+export USE_CACHE=1
+export use_fp16=true
 
-ollama run llama2 --num-thread 12 --num-gpu 1
+ollama run llama2
 ```
 
 ### 方案C：最高质量（推荐用于精准转录）
 ```bash
-set OMP_NUM_THREADS=8
-set USE_CACHE=1
-set use_fp16=false
+export OMP_NUM_THREADS=8
+export USE_CACHE=1
+export use_fp16=false
 
-ollama run llama3 --num-thread 8 --num-gpu 1
+ollama run llama3
 ```
 
 ---
@@ -185,7 +188,7 @@ ollama run llama3 --num-thread 8 --num-gpu 1
 
 ### 如果仍然卡顿
 1. 检查 CPU 使用率：`tasklist /v`
-2. 检查内存使用：`wmic OS get TotalVisibleMemorySize,FreePhysicalMemory`
+2. 检查内存使用：`Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize, FreePhysicalMemory`
 3. 关闭后台应用减少干扰
 4. 尝试重启服务：`taskkill /F /IM openclaw.exe && openclaw`
 
@@ -205,11 +208,14 @@ ollama run llama3 --num-thread 8 --num-gpu 1
 
 运行以下命令验证优化：
 ```bash
-# 测试单个转录
-time ollama run gemma:2b "test transcription"
+# 测试单个转录 (替换 audio_sample.wav 为实际音频文件)
+time openclaw transcribe audio_sample.wav
 
-# 测试并发处理
-for i in {1..5}; do ollama run gemma:2b "test $i" & done
+# 测试并发处理 (替换 audio*.wav 为实际音频文件)
+for audio_file in audio_sample1.wav audio_sample2.wav audio_sample3.wav; do
+  openclaw transcribe "$audio_file" &
+done
+wait
 
 # 检查缓存效果
 grep -i "cache_hit" ~/.openclaw/logs/openclaw.log

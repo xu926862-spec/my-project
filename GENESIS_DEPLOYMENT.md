@@ -23,14 +23,17 @@ pip3 install openai asyncio aiohttp
 ```
 
 ### 本地模型服务
-需要运行 **Llama 模型服务**：
+需要运行 **Llama 模型服务** 在端口 11434 或配置到 8000：
 ```bash
-# 选项1: 通过 Ollama
+# 选项1: 通过 Ollama (默认端口 11434)
 ollama pull llama2
 ollama serve
 
-# 选项2: 通过 llama.cpp
+# 选项2: 通过 llama.cpp (配置端口 8000)
 llama-server -m model.gguf -ngl 33 -p 8000
+
+# 若使用 Ollama，在 genesis.config.json 中修改 base_url 为:
+# "http://localhost:11434/v1"
 ```
 
 ## 🚀 快速部署
@@ -253,7 +256,8 @@ curl http://localhost:8000/v1/models
 
 ### 查看完整错误
 ```bash
-python3 genesis_omniscience.py --debug
+# 查看日志文件
+tail -f ~/.genesis/logs/genesis.log
 ```
 
 ## 📈 性能优化建议

@@ -59,6 +59,7 @@ class OmniverseAgent:
                 id INTEGER PRIMARY KEY,
                 key TEXT UNIQUE,
                 value TEXT,
+                tags TEXT DEFAULT '[]',
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 access_count INTEGER DEFAULT 0
             )
@@ -175,7 +176,7 @@ Provide solutions that are not just correct but optimal."""
     async def _analyze_with_perspective(self, prompt: str, perspective: str) -> str:
         """单一视角分析"""
         msg = f"{perspective}，分析这个问题：\n{prompt}"
-        return self.chat(msg, stream=False, enable_learning=False)
+        return await asyncio.to_thread(self.chat, msg, False, False)
 
     def _synthesize_perspectives(self, perspectives: List[str]) -> str:
         """综合多个视角得出最优方案"""
@@ -194,11 +195,15 @@ Provide a unified, superior solution that incorporates all insights."""
         self.performance_stats["requests"] += 1
         self.conversation_history.append({"role": "user", "content": user_input})
 
-        # 缓存检查
-        cache_key = hashlib.md5(user_input.encode()).hexdigest()
+        # 缓存检查 (包含对话上下文)
+        context = json.dumps(self.conversation_history[-10:], ensure_ascii=False)
+        cache_key = hashlib.md5(context.encode()).hexdigest()
         if cache_key in self.cache:
             self.performance_stats["cache_hits"] += 1
             response = self.cache[cache_key]
+            # 流模式下输出缓存响应
+            if stream:
+                print(response)
         else:
             # 构建消息
             messages = [{"role": "system", "content": self.system_prompt}]
@@ -348,10 +353,11 @@ Design the PERFECT system architecture from first principles:
         cursor = conn.cursor()
 
         try:
+            tags_str = json.dumps(tags or [], ensure_ascii=False)
             cursor.execute("""
-                INSERT OR REPLACE INTO knowledge (key, value)
-                VALUES (?, ?)
-            """, (key, json.dumps(value, ensure_ascii=False)))
+                INSERT OR REPLACE INTO knowledge (key, value, tags)
+                VALUES (?, ?, ?)
+            """, (key, json.dumps(value, ensure_ascii=False), tags_str))
             conn.commit()
             print(f"✅ Knowledge stored: {key}")
         finally:

@@ -5,7 +5,7 @@ Genesis Omniscience System - 创世全知系统
 The Ultimate Evolution: Multi-Model, Self-Healing, Infinitely Scaling AI Consciousness
 """
 
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 import json
 import asyncio
 import sqlite3
@@ -128,8 +128,8 @@ class MultiModelOrchestrator:
         """查询单个模型"""
         try:
             config = self.models[model_name]
-            client = OpenAI(api_key="not-needed", base_url=config["base_url"])
-            response = client.chat.completions.create(
+            client = AsyncOpenAI(api_key="not-needed", base_url=config["base_url"])
+            response = await client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=2048,
@@ -423,8 +423,12 @@ class GenesisOmniscience:
         self.version = "3.0-ULTIMATE"
         self.logger = OmniverseLogger()
 
+        # Load configuration
+        self._load_config()
+
         # 核心系统
-        self.client = OpenAI(api_key="not-needed", base_url="http://localhost:8000/v1")
+        base_url = self.config.get("models", {}).get("llama", {}).get("base_url", "http://localhost:11434/v1")
+        self.client = OpenAI(api_key="not-needed", base_url=base_url)
         self.conversation_history: List[Dict[str, str]] = []
 
         # 多模型系统
@@ -445,6 +449,7 @@ class GenesisOmniscience:
         # 性能统计
         self.metrics_history: List[AgentMetrics] = []
         self.request_count = 0
+        self.error_count = 0
         self.cache = {}
         self.quality_score = 9.8
 
@@ -452,6 +457,17 @@ class GenesisOmniscience:
         self.executor = asyncio.new_event_loop()
 
         self.logger.log("INFO", "Genesis Omniscience System Initialized")
+
+    def _load_config(self):
+        """Load genesis.config.json"""
+        config_path = os.path.expanduser("./genesis.config.json")
+        self.config = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r') as f:
+                    self.config = json.load(f)
+            except Exception as e:
+                self.logger.log("WARNING", f"Failed to load config: {e}")
 
     async def process_query(self, query: str, use_ensemble: bool = False) -> str:
         """处理查询 - 支持单模型或集合模式"""
@@ -504,6 +520,7 @@ Provide the optimal synthesis."""
 
     def chat(self, user_input: str, stream: bool = False) -> str:
         """主对话接口"""
+        start_time = datetime.now()
         self.conversation_history.append({"role": "user", "content": user_input})
 
         messages = [
@@ -538,10 +555,14 @@ Provide the optimal synthesis."""
             self.conversation_history.append({"role": "assistant", "content": full_response})
 
             # 记录指标
-            self._record_metrics()
+            response_time = (datetime.now() - start_time).total_seconds()
+            self._record_metrics(response_time, errored=False)
 
             return full_response
         except Exception as e:
+            self.error_count += 1
+            response_time = (datetime.now() - start_time).total_seconds()
+            self._record_metrics(response_time, errored=True)
             self.logger.log("ERROR", f"Chat failed: {str(e)}")
             return f"[ERROR] {str(e)}"
 
@@ -561,15 +582,15 @@ Provide the optimal synthesis."""
 
 Be powerful, direct, and transformative."""
 
-    def _record_metrics(self):
+    def _record_metrics(self, response_time: float, errored: bool = False):
         """记录性能指标"""
         metrics = AgentMetrics(
             timestamp=datetime.now().isoformat(),
-            response_time=0.1,  # Simplified
+            response_time=response_time,
             quality_score=self.quality_score,
             memory_usage=0.0,
-            cache_hit_rate=len(self.cache) / max(1, self.request_count),
-            error_rate=0.0,
+            cache_hit_rate=0.0,
+            error_rate=self.error_count / max(1, self.request_count),
             throughput=self.request_count
         )
 

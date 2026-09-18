@@ -307,7 +307,7 @@ main() {
     validate_config
     echo
 
-    check_llama_service
+    check_llama_service || print_warning "Continuing without a Llama server"
     echo
 
     init_databases

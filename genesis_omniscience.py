@@ -75,8 +75,9 @@ class OmniverseLogger:
     def log(self, level: str, message: str, metadata: Dict = None):
         """记录带元数据的事件"""
         if metadata:
-            message += f" | {json.dumps(metadata)}"
-        getattr(self.logger, level.lower())(message)
+            message += f" | {json.dumps(metadata, ensure_ascii=False)}"
+        safe_message = message.encode('utf-8', errors='replace').decode('utf-8')
+        getattr(self.logger, level.lower())(safe_message)
 
 # ==================== 多模型编排系统 ====================
 

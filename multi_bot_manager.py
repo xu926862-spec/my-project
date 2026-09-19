@@ -43,6 +43,30 @@ class BotConfig:
             "port": 8005,
             "file": "teacher_bot.py",
             "desc": "课程设计、答疑、教学"
+        },
+        "summarizer": {
+            "name": "总结助手",
+            "port": 8006,
+            "file": "summarizer_bot.py",
+            "desc": "文章摘要、关键词提取"
+        },
+        "legal": {
+            "name": "法律顾问",
+            "port": 8007,
+            "file": "legal_bot.py",
+            "desc": "合同审查、法律风险评估"
+        },
+        "medical": {
+            "name": "医疗健康助手",
+            "port": 8008,
+            "file": "medical_bot.py",
+            "desc": "症状查询、健康建议"
+        },
+        "finance": {
+            "name": "财务顾问",
+            "port": 8009,
+            "file": "finance_bot.py",
+            "desc": "预算规划、投资建议"
         }
     }
 

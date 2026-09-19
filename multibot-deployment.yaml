@@ -1,0 +1,245 @@
+# 多机器人系统 Kubernetes 部署配置
+# 包含管理中心和所有专业机器人
+
+---
+# 1. Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: multibot-system
+
+---
+# 2. ConfigMap - 应用代码
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multibot-code
+  namespace: multibot-system
+data:
+  bots.json: |
+    {
+      "bots": [
+        {"id": "assistant", "port": 8001},
+        {"id": "coder", "port": 8002},
+        {"id": "writer", "port": 8003},
+        {"id": "analyst", "port": 8004},
+        {"id": "teacher", "port": 8005},
+        {"id": "summarizer", "port": 8006},
+        {"id": "legal", "port": 8007},
+        {"id": "medical", "port": 8008},
+        {"id": "finance", "port": 8009}
+      ]
+    }
+
+---
+# 3. Deployment - 管理中心
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multibot-manager
+  namespace: multibot-system
+  labels:
+    app: multibot-manager
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: multibot-manager
+  template:
+    metadata:
+      labels:
+        app: multibot-manager
+    spec:
+      containers:
+      - name: manager
+        image: python:3.11-slim
+        command: ["python3", "/app/multi_bot_manager.py"]
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+        resources:
+          requests:
+            cpu: "100m"
+            memory: 128Mi
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: app-code
+        configMap:
+          name: multibot-code
+
+---
+# 4. Deployment - 专业机器人集群
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bot-workers
+  namespace: multibot-system
+  labels:
+    app: bot-workers
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bot-workers
+  template:
+    metadata:
+      labels:
+        app: bot-workers
+    spec:
+      containers:
+      - name: legal-bot
+        image: python:3.11-slim
+        command: ["python3", "/app/legal_bot.py"]
+        ports:
+        - containerPort: 8007
+        resources:
+          requests:
+            cpu: "50m"
+            memory: 64Mi
+          limits:
+            cpu: "200m"
+            memory: 128Mi
+      - name: medical-bot
+        image: python:3.11-slim
+        command: ["python3", "/app/medical_bot.py"]
+        ports:
+        - containerPort: 8008
+        resources:
+          requests:
+            cpu: "50m"
+            memory: 64Mi
+          limits:
+            cpu: "200m"
+            memory: 128Mi
+      - name: finance-bot
+        image: python:3.11-slim
+        command: ["python3", "/app/finance_bot.py"]
+        ports:
+        - containerPort: 8009
+        resources:
+          requests:
+            cpu: "50m"
+            memory: 64Mi
+          limits:
+            cpu: "200m"
+            memory: 128Mi
+
+---
+# 5. Service - 管理中心（对外访问）
+apiVersion: v1
+kind: Service
+metadata:
+  name: multibot-manager-service
+  namespace: multibot-system
+spec:
+  type: LoadBalancer
+  selector:
+    app: multibot-manager
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+
+---
+# 6. Service - 机器人集群（集群内访问）
+apiVersion: v1
+kind: Service
+metadata:
+  name: bot-workers-service
+  namespace: multibot-system
+spec:
+  type: ClusterIP
+  selector:
+    app: bot-workers
+  ports:
+  - name: legal
+    port: 8007
+    targetPort: 8007
+  - name: medical
+    port: 8008
+    targetPort: 8008
+  - name: finance
+    port: 8009
+    targetPort: 8009
+
+---
+# 7. HorizontalPodAutoscaler - 自动扩缩容
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bot-workers-hpa
+  namespace: multibot-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bot-workers
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+---
+# 8. Ingress - 统一入口路由
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multibot-ingress
+  namespace: multibot-system
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: multibot.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: multibot-manager-service
+            port:
+              number: 80
+      - path: /legal
+        pathType: Prefix
+        backend:
+          service:
+            name: bot-workers-service
+            port:
+              number: 8007
+      - path: /medical
+        pathType: Prefix
+        backend:
+          service:
+            name: bot-workers-service
+            port:
+              number: 8008
+      - path: /finance
+        pathType: Prefix
+        backend:
+          service:
+            name: bot-workers-service
+            port:
+              number: 8009

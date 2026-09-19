@@ -1,0 +1,22 @@
+[
+  {
+    "role": "user",
+    "content": "ollama pull neural-chat  # 更聪明的本地模型"
+  },
+  {
+    "role": "user",
+    "content": "c？"
+  },
+  {
+    "role": "assistant",
+    "content": "\nI'm not sure I understand what you are saying with \"c？\". Could you explain?"
+  },
+  {
+    "role": "user",
+    "content": "你好"
+  },
+  {
+    "role": "assistant",
+    "content": "\n你好! *smiling face* How are you today? Is there anything I can help you with?"
+  }
+]

@@ -151,7 +151,7 @@ After you clone your fork, add the upstream repository as a second remote so you
    git remote -v
    ```
 
-You should see both `origin` and `upstream`:
+You should see both `origin` and `upstream`. For example:
 
 ```shell
 origin    https://github.com/YOUR-USERNAME/YOUR-FORK.git (fetch)
@@ -160,7 +160,7 @@ upstream  https://github.com/ORIGINAL-OWNER/ORIGINAL-REPOSITORY.git (fetch)
 upstream  https://github.com/ORIGINAL-OWNER/ORIGINAL-REPOSITORY.git (push)
 ```
 
-Git shows both fetch and push URLs for each configured remote. Seeing a push URL for `upstream` does not mean you have permission to push to the upstream repository.
+Depending on your Git configuration, `upstream` may appear as fetch-only or with both fetch and push URLs. If a push URL appears for `upstream`, that does not mean you have permission to push to the upstream repository.
 
 > [!NOTE]
 > Once `upstream` is configured, you can fetch changes from the upstream repository and merge or rebase them into your local topic branch or your local copy of the default branch.

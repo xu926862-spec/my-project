@@ -112,7 +112,7 @@ GitHub Desktop can help you fork a repository while you work locally.
 4. When GitHub Desktop prompts you to create a fork, follow the dialog to continue.
 5. Choose whether the fork is for contributing back to the upstream repository or for your own work.
 
-For more detailed Desktop-specific screenshots and workflow guidance, see [Fork a repository](https://docs.github.com/en/pull-requests/how-tos/work-with-forks/fork-a-repo).
+For more detailed Desktop-specific screenshots and workflow guidance, see [Cloning and forking repositories from GitHub Desktop](https://docs.github.com/en/desktop/adding-and-cloning-repositories/cloning-and-forking-repositories-from-github-desktop).
 
 ## Cloning your forked repository
 

@@ -47,7 +47,6 @@ class ClaudeChatbot:
                 max_tokens=2048,
                 system=self.system_prompt,
                 messages=self.conversation_history,
-                temperature=self.temperature,
             )
 
             assistant_message = ""

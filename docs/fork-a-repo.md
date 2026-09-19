@@ -160,6 +160,8 @@ upstream  https://github.com/ORIGINAL-OWNER/ORIGINAL-REPOSITORY.git (fetch)
 upstream  https://github.com/ORIGINAL-OWNER/ORIGINAL-REPOSITORY.git (push)
 ```
 
+Git shows both fetch and push URLs for each configured remote. Seeing a push URL for `upstream` does not mean you have permission to push to the upstream repository.
+
 > [!NOTE]
 > Once `upstream` is configured, you can fetch changes from the upstream repository and merge or rebase them into your local topic branch or your local copy of the default branch.
 

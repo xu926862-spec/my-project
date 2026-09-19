@@ -1,0 +1,215 @@
+# Qwen Model Kubernetes Deployment
+# Complete configuration for vLLM + Qwen 1.5-4B
+
+---
+# 1. Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qwen-ai
+
+---
+# 2. PersistentVolumeClaim for Model
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen-model
+  namespace: qwen-ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# 3. Qwen Service Deployment
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: qwen
+  namespace: qwen-ai
+  annotations:
+    knative.aliyun.com/ai-gateway: inference
+    knative.aliyun.com/ai-gateway-inference-priority: "1"
+  labels:
+    app: qwen
+    version: v1
+    release: qwen
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/metric: "concurrency"
+        autoscaling.knative.dev/target: "2"
+        autoscaling.knative.dev/max-scale: "3"
+        autoscaling.knative.dev/min-scale: "1"
+      labels:
+        app: qwen
+        version: v1
+        release: qwen
+    spec:
+      serviceAccountName: qwen-sa
+      containers:
+      - name: vllm-qwen
+        image: ac2-registry.cn-hangzhou.cr.aliyuncs.com/ac2/vllm:0.4.1-ubuntu22.04
+        imagePullPolicy: IfNotPresent
+
+        command:
+        - sh
+        - -c
+        - |
+          python3 -m vllm.entrypoints.openai.api_server \
+            --port 8080 \
+            --host 0.0.0.0 \
+            --trust-remote-code \
+            --model /models/Qwen1.5-4B-Chat/ \
+            --gpu-memory-utilization 0.95 \
+            --max-model-len 4096 \
+            --dtype half \
+            --enable-prefix-caching \
+            --enable-chunked-prefill \
+            --max-num-seqs 256 \
+            --disable-log-requests
+
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+        - name: HF_HOME
+          value: /models
+
+        resources:
+          requests:
+            cpu: "8"
+            memory: 32Gi
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "32"
+            memory: 64Gi
+            nvidia.com/gpu: "1"
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+
+        volumeMounts:
+        - name: qwen-models
+          mountPath: /models
+        - name: cache
+          mountPath: /tmp
+
+      nodeSelector:
+        accelerator: nvidia-gpu
+
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+
+      volumes:
+      - name: qwen-models
+        persistentVolumeClaim:
+          claimName: qwen-model
+      - name: cache
+        emptyDir:
+          sizeLimit: 10Gi
+
+---
+# 4. Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: qwen-sa
+  namespace: qwen-ai
+
+---
+# 5. Service (for external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen-service
+  namespace: qwen-ai
+  labels:
+    app: qwen
+spec:
+  type: LoadBalancer
+  selector:
+    app: qwen
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+
+---
+# 6. HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qwen-hpa
+  namespace: qwen-ai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qwen
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# 7. ConfigMap (API Gateway Config)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qwen-config
+  namespace: qwen-ai
+data:
+  model-config.json: |
+    {
+      "model": "Qwen1.5-4B-Chat",
+      "provider": "vllm",
+      "endpoint": "http://qwen-service:80",
+      "capabilities": {
+        "chat": true,
+        "completion": true,
+        "embedding": false
+      },
+      "rate_limit": {
+        "requests_per_minute": 100,
+        "tokens_per_minute": 10000
+      }
+    }

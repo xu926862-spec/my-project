@@ -1,0 +1,32 @@
+[Unit]
+Description=Claude API Chatbot Service
+After=network.target
+Documentation=https://github.com/xu926862-spec/my-project
+
+[Service]
+Type=simple
+User=claude-bot
+WorkingDirectory=/opt/claude-chatbot
+ExecStart=/usr/bin/python3 /opt/claude-chatbot/claude_chatbot.py
+
+# Environment variables
+Environment="ANTHROPIC_API_KEY=sk-ant-your-key-here"
+Environment="PYTHONUNBUFFERED=1"
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=claude-chatbot
+
+[Install]
+WantedBy=multi-user.target

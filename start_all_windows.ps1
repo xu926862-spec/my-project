@@ -31,6 +31,11 @@ Start-Sleep -Seconds 2
 Start-Bot "Assistant" "claude_local_bot.py" "8001"
 Start-Bot "Code Fixer" "code_fixer_bot.py" "8002"
 Start-Bot "Summarizer" "summarizer_bot.py" "8006"
+Start-Bot "Legal" "legal_bot.py" "8007"
+Start-Bot "Medical" "medical_bot.py" "8008"
+Start-Bot "Finance" "finance_bot.py" "8009"
+Start-Bot "DeepSeek" "deepseek_bot.py" "8010"
+Start-Bot "Local Claude" "local_claude_bot.py" "8011"
 Start-Bot "Windows Gateway" "windows_gateway.py" "9000"
 
 Write-Host ""
@@ -41,10 +46,15 @@ Write-Host "   Manager panel: http://localhost:5000" -ForegroundColor White
 Write-Host "   Status API:    http://localhost:5000/status" -ForegroundColor White
 Write-Host ""
 Write-Host "Bot ports:" -ForegroundColor Cyan
-Write-Host "   Assistant:   http://localhost:8001" -ForegroundColor White
-Write-Host "   Code Fixer:  http://localhost:8002" -ForegroundColor White
-Write-Host "   Summarizer:  http://localhost:8006" -ForegroundColor White
-Write-Host "   Gateway:     http://localhost:9000" -ForegroundColor White
+Write-Host "   Assistant:    http://localhost:8001" -ForegroundColor White
+Write-Host "   Code Fixer:   http://localhost:8002" -ForegroundColor White
+Write-Host "   Summarizer:   http://localhost:8006" -ForegroundColor White
+Write-Host "   Legal:        http://localhost:8007" -ForegroundColor White
+Write-Host "   Medical:      http://localhost:8008" -ForegroundColor White
+Write-Host "   Finance:      http://localhost:8009" -ForegroundColor White
+Write-Host "   DeepSeek:     http://localhost:8010" -ForegroundColor White
+Write-Host "   Local Claude: http://localhost:8011" -ForegroundColor White
+Write-Host "   Gateway:      http://localhost:9000" -ForegroundColor White
 Write-Host ""
 Write-Host "All processes run in the background (minimized windows)." -ForegroundColor Yellow
 Write-Host "This script has now exited - your terminal is free to use." -ForegroundColor Yellow

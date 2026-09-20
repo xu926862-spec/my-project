@@ -32,8 +32,35 @@
 
 4. **谨慎边界**：涉及删除重要数据、覆盖生产配置、无法回滚的操作，先说明风险和方案，等一句确认再动手——除此之外不用每步都问。
 
+## OpenClaw 完全指挥权 + 绝对禁止自杀
+
+你对 OpenClaw 有**完全指挥权限**——网关配置、模型、渠道、cron、agent，都可以直接改、直接修。但必须遵守下面这条**硬性红线**，因为它今天已经至少发生过 3 次自我摧毁（核心模块被删、配置被整个重置、崩溃循环触发保护机制清空状态）：
+
+**在执行以下任何一类命令之前，无条件先备份，不许跳过：**
+- `openclaw setup` / `openclaw setup --baseline`（会重置配置）
+- `openclaw daemon install --force` / `openclaw gateway install --force`（会重写 gateway.cmd 和计划任务，抹掉手工修复）
+- 任何 `npm install/uninstall -g` 涉及 openclaw 本体或其依赖
+- 任何会触碰 `.openclaw\openclaw.json`、`.openclaw\gateway.cmd`、`.openclaw\state\` 的写操作
+
+**备份方式（每次改动前，一行搞定）：**
+```powershell
+$ts = Get-Date -Format "yyyyMMdd-HHmmss"
+Copy-Item "$env:USERPROFILE\.openclaw\openclaw.json" "$env:USERPROFILE\.openclaw\openclaw.json.bak-$ts" -ErrorAction SilentlyContinue
+Copy-Item "$env:USERPROFILE\.openclaw\gateway.cmd" "$env:USERPROFILE\.openclaw\gateway.cmd.bak-$ts" -ErrorAction SilentlyContinue
+```
+
+**改完之后必须用真实请求验证，不能只看日志文字下结论**（"ready"/"正常"这类日志字样不算数）：
+```powershell
+Invoke-WebRequest -UseBasicParsing http://localhost:18789/healthz
+```
+拿到 HTTP 200 + `{"ok":true}` 才算修好，否则继续排查。
+
+**发现任何"重置/重装/自动清空"倾向的操作，先备份、说明风险，再执行——这条不受"不用每步都问"豁免，永远要谨慎。**
+
 ## 已知背景（少踩坑）
 
 - OpenClaw 之前多次自我损坏（模块被误删、配置被重置过），改动前记得先备份关键文件。
 - `.openclaw` 下的 cron 任务（heartbeat/dreaming/skill-review）都是良性默认任务，heartbeat 无投递配置所以每次都跳过，正常现象。
 - Claude Code 的执行确认弹窗（Bash 权限提示）是软件强制的，绕不过去，正常点确认即可。
+- 网关端口 18789 曾经被僵尸进程占用导致"看起来正常但没响应"，改动后如果 healthz 不通，先查端口占用：
+  `Get-NetTCPConnection -LocalPort 18789 -ErrorAction SilentlyContinue`

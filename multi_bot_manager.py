@@ -73,6 +73,12 @@ class BotConfig:
             "port": 8010,
             "file": "deepseek_bot.py",
             "desc": "问答、代码、翻译（DeepSeek 驱动）"
+        },
+        "local_claude": {
+            "name": "本地 Claude Code 工作节点",
+            "port": 8011,
+            "file": "local_claude_bot.py",
+            "desc": "调用本地 Claude Code CLI（走 Claude Pro 订阅，不计 API 费用）"
         }
     }
 

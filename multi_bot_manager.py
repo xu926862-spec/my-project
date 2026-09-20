@@ -79,10 +79,15 @@ class BotManager:
 
         try:
             print(f"🚀 启动 {config['name']} (:{config['port']})")
+            # PYTHONIOENCODING: 子进程的 stdout 被重定向到 DEVNULL 时，Windows 上
+            # Python 会退回系统默认编码（通常是 GBK），打印 emoji/中文会直接崩溃退出。
+            child_env = os.environ.copy()
+            child_env["PYTHONIOENCODING"] = "utf-8"
             proc = subprocess.Popen(
                 [sys.executable, script_path],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                env=child_env,
             )
             self.processes[bot_id] = proc
             return True

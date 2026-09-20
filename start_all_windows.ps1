@@ -21,20 +21,15 @@ function Start-Bot($name, $script, $port) {
     Start-Sleep -Seconds 1
 }
 
-# Start management center
+# Start management center - it spawns all the bots in BotConfig itself
+# (coder/summarizer/legal/medical/finance/deepseek/local_claude), so don't
+# launch those separately here or they'll fight over the same ports.
 Write-Host "Starting manager (port 5000)..." -ForegroundColor Yellow
 Start-Process python -ArgumentList "multi_bot_manager.py" -WindowStyle Minimized
 
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 3
 
-# Start all bots
-Start-Bot "Code Fixer" "code_fixer_bot.py" "8002"
-Start-Bot "Summarizer" "summarizer_bot.py" "8006"
-Start-Bot "Legal" "legal_bot.py" "8007"
-Start-Bot "Medical" "medical_bot.py" "8008"
-Start-Bot "Finance" "finance_bot.py" "8009"
-Start-Bot "DeepSeek" "deepseek_bot.py" "8010"
-Start-Bot "Local Claude" "local_claude_bot.py" "8011"
+# windows_gateway.py isn't in BotConfig, so it still needs its own launch.
 Start-Bot "Windows Gateway" "windows_gateway.py" "9000"
 
 Write-Host ""

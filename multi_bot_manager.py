@@ -67,6 +67,12 @@ class BotConfig:
             "port": 8009,
             "file": "finance_bot.py",
             "desc": "预算规划、投资建议"
+        },
+        "deepseek": {
+            "name": "DeepSeek 功能助手",
+            "port": 8010,
+            "file": "deepseek_bot.py",
+            "desc": "问答、代码、翻译（DeepSeek 驱动）"
         }
     }
 

@@ -1,5 +1,6 @@
 # Windows full system launcher
-# Starts the manager plus all bots and the gateway
+# Starts the manager plus all bots and the gateway, then exits.
+# Use stop_all_windows.ps1 to stop everything later.
 
 Write-Host "Starting multi-bot system (Windows)" -ForegroundColor Green
 Write-Host ""
@@ -13,15 +14,10 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "OK: Python installed: $pythonCheck" -ForegroundColor Green
 
-# Create logs directory
-if (!(Test-Path "logs")) {
-    New-Item -ItemType Directory -Name "logs" | Out-Null
-}
-
-# Helper to launch one bot
+# Helper to launch one bot in its own minimized window
 function Start-Bot($name, $script, $port) {
     Write-Host "Starting $name (port $port)..." -ForegroundColor Cyan
-    Start-Process python -ArgumentList $script -WindowStyle Minimized -NoNewWindow
+    Start-Process python -ArgumentList $script -WindowStyle Minimized
     Start-Sleep -Seconds 1
 }
 
@@ -50,15 +46,6 @@ Write-Host "   Code Fixer:  http://localhost:8002" -ForegroundColor White
 Write-Host "   Summarizer:  http://localhost:8006" -ForegroundColor White
 Write-Host "   Gateway:     http://localhost:9000" -ForegroundColor White
 Write-Host ""
-Write-Host "Note: all processes run in the background." -ForegroundColor Yellow
-Write-Host "      Visible in Task Manager." -ForegroundColor Yellow
-Write-Host ""
-Write-Host "Press any key to stop all services..." -ForegroundColor Gray
-[Console]::ReadKey() | Out-Null
-
-# Stop all python processes
-Write-Host ""
-Write-Host "Stopping all services..." -ForegroundColor Yellow
-Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force
-
-Write-Host "OK: all services stopped" -ForegroundColor Green
+Write-Host "All processes run in the background (minimized windows)." -ForegroundColor Yellow
+Write-Host "This script has now exited - your terminal is free to use." -ForegroundColor Yellow
+Write-Host "Run stop_all_windows.ps1 to stop everything later." -ForegroundColor Yellow

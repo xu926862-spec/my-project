@@ -1,64 +1,64 @@
-# Windows 完整系统启动脚本
-# 同时启动所有机器人和网关
+# Windows full system launcher
+# Starts the manager plus all bots and the gateway
 
-Write-Host "🚀 启动多机器人完整系统 (Windows)" -ForegroundColor Green
+Write-Host "Starting multi-bot system (Windows)" -ForegroundColor Green
 Write-Host ""
 
-# 检查 Python
+# Check Python
 $pythonCheck = python --version 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ 未找到 Python，请先安装 Python" -ForegroundColor Red
+    Write-Host "ERROR: Python not found, please install Python first" -ForegroundColor Red
     exit
 }
 
-Write-Host "✓ Python 已安装: $pythonCheck" -ForegroundColor Green
+Write-Host "OK: Python installed: $pythonCheck" -ForegroundColor Green
 
-# 创建日志目录
+# Create logs directory
 if (!(Test-Path "logs")) {
     New-Item -ItemType Directory -Name "logs" | Out-Null
 }
 
-# 启动函数
+# Helper to launch one bot
 function Start-Bot($name, $script, $port) {
-    Write-Host "🤖 启动 $name (端口 $port)..." -ForegroundColor Cyan
+    Write-Host "Starting $name (port $port)..." -ForegroundColor Cyan
     Start-Process python -ArgumentList $script -WindowStyle Minimized -NoNewWindow
     Start-Sleep -Seconds 1
 }
 
-# 启动管理中心
-Write-Host "📡 启动管理中心 (端口 5000)..." -ForegroundColor Yellow
+# Start management center
+Write-Host "Starting manager (port 5000)..." -ForegroundColor Yellow
 Start-Process python -ArgumentList "multi_bot_manager.py" -WindowStyle Minimized
 
 Start-Sleep -Seconds 2
 
-# 启动所有机器人
-Start-Bot "通用助手" "claude_local_bot.py" "8001"
-Start-Bot "代码修复师" "code_fixer_bot.py" "8002"
-Start-Bot "总结助手" "summarizer_bot.py" "8006"
-Start-Bot "Windows 网关" "windows_gateway.py" "9000"
+# Start all bots
+Start-Bot "Assistant" "claude_local_bot.py" "8001"
+Start-Bot "Code Fixer" "code_fixer_bot.py" "8002"
+Start-Bot "Summarizer" "summarizer_bot.py" "8006"
+Start-Bot "Windows Gateway" "windows_gateway.py" "9000"
 
 Write-Host ""
-Write-Host "✅ 所有服务已启动！" -ForegroundColor Green
+Write-Host "All services started!" -ForegroundColor Green
 Write-Host ""
-Write-Host "📊 访问地址：" -ForegroundColor Cyan
-Write-Host "   管理面板: http://localhost:5000" -ForegroundColor White
-Write-Host "   状态 API: http://localhost:5000/status" -ForegroundColor White
+Write-Host "URLs:" -ForegroundColor Cyan
+Write-Host "   Manager panel: http://localhost:5000" -ForegroundColor White
+Write-Host "   Status API:    http://localhost:5000/status" -ForegroundColor White
 Write-Host ""
-Write-Host "🤖 机器人端口：" -ForegroundColor Cyan
-Write-Host "   通用助手:    http://localhost:8001" -ForegroundColor White
-Write-Host "   代码修复师:  http://localhost:8002" -ForegroundColor White
-Write-Host "   总结助手:    http://localhost:8006" -ForegroundColor White
-Write-Host "   网关:       http://localhost:9000" -ForegroundColor White
+Write-Host "Bot ports:" -ForegroundColor Cyan
+Write-Host "   Assistant:   http://localhost:8001" -ForegroundColor White
+Write-Host "   Code Fixer:  http://localhost:8002" -ForegroundColor White
+Write-Host "   Summarizer:  http://localhost:8006" -ForegroundColor White
+Write-Host "   Gateway:     http://localhost:9000" -ForegroundColor White
 Write-Host ""
-Write-Host "📝 提示：所有进程运行在后台。" -ForegroundColor Yellow
-Write-Host "        在任务管理器中可见。" -ForegroundColor Yellow
+Write-Host "Note: all processes run in the background." -ForegroundColor Yellow
+Write-Host "      Visible in Task Manager." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "按任意键停止所有服务..." -ForegroundColor Gray
+Write-Host "Press any key to stop all services..." -ForegroundColor Gray
 [Console]::ReadKey() | Out-Null
 
-# 停止所有 Python 进程
+# Stop all python processes
 Write-Host ""
-Write-Host "🛑 停止所有服务..." -ForegroundColor Yellow
+Write-Host "Stopping all services..." -ForegroundColor Yellow
 Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force
 
-Write-Host "✓ 所有服务已停止" -ForegroundColor Green
+Write-Host "OK: all services stopped" -ForegroundColor Green

@@ -5,7 +5,9 @@
 """
 
 import json
+import os
 import subprocess
+import sys
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
@@ -14,35 +16,11 @@ import time
 class BotConfig:
     """机器人配置"""
     BOTS = {
-        "assistant": {
-            "name": "通用助手",
-            "port": 8001,
-            "file": "claude_local_bot.py",
-            "desc": "闲聊、问答、对话"
-        },
         "coder": {
             "name": "代码修复师",
             "port": 8002,
             "file": "code_fixer_bot.py",
             "desc": "代码审查、bug修复、优化"
-        },
-        "writer": {
-            "name": "写作助手",
-            "port": 8003,
-            "file": "writer_bot.py",
-            "desc": "文章生成、校对、翻译"
-        },
-        "analyst": {
-            "name": "数据分析师",
-            "port": 8004,
-            "file": "analyst_bot.py",
-            "desc": "数据处理、图表、分析"
-        },
-        "teacher": {
-            "name": "教学助手",
-            "port": 8005,
-            "file": "teacher_bot.py",
-            "desc": "课程设计、答疑、教学"
         },
         "summarizer": {
             "name": "总结助手",
@@ -86,24 +64,30 @@ class BotManager:
     """机器人管理器"""
 
     def __init__(self):
-        self.bots = {}
         self.processes = {}
-        self.status = {}
 
     def start_bot(self, bot_id):
-        """启动单个机器人"""
+        """真正用子进程启动一个机器人脚本"""
         if bot_id not in BotConfig.BOTS:
             return False
 
         config = BotConfig.BOTS[bot_id]
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), config["file"])
+        if not os.path.exists(script_path):
+            print(f"❌ 启动失败: {config['file']} 不存在")
+            return False
+
         try:
             print(f"🚀 启动 {config['name']} (:{config['port']})")
-            # 这里可以实现启动机器人的逻辑
-            self.status[bot_id] = "running"
+            proc = subprocess.Popen(
+                [sys.executable, script_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            self.processes[bot_id] = proc
             return True
         except Exception as e:
             print(f"❌ 启动失败: {e}")
-            self.status[bot_id] = "error"
             return False
 
     def start_all(self):
@@ -115,13 +99,20 @@ class BotManager:
         print("\n✅ 所有机器人已启动！\n")
 
     def get_status(self):
-        """获取所有机器人状态"""
+        """获取所有机器人状态（真正检查子进程是否还活着）"""
         status_info = {}
         for bot_id, config in BotConfig.BOTS.items():
+            proc = self.processes.get(bot_id)
+            if proc is not None and proc.poll() is None:
+                status = "running"
+            elif proc is not None:
+                status = f"exited({proc.returncode})"
+            else:
+                status = "stopped"
             status_info[bot_id] = {
                 "name": config["name"],
                 "port": config["port"],
-                "status": self.status.get(bot_id, "stopped"),
+                "status": status,
                 "url": f"http://localhost:{config['port']}"
             }
         return status_info

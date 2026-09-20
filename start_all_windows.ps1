@@ -28,7 +28,6 @@ Start-Process python -ArgumentList "multi_bot_manager.py" -WindowStyle Minimized
 Start-Sleep -Seconds 2
 
 # Start all bots
-Start-Bot "Assistant" "claude_local_bot.py" "8001"
 Start-Bot "Code Fixer" "code_fixer_bot.py" "8002"
 Start-Bot "Summarizer" "summarizer_bot.py" "8006"
 Start-Bot "Legal" "legal_bot.py" "8007"
@@ -46,7 +45,6 @@ Write-Host "   Manager panel: http://localhost:5000" -ForegroundColor White
 Write-Host "   Status API:    http://localhost:5000/status" -ForegroundColor White
 Write-Host ""
 Write-Host "Bot ports:" -ForegroundColor Cyan
-Write-Host "   Assistant:    http://localhost:8001" -ForegroundColor White
 Write-Host "   Code Fixer:   http://localhost:8002" -ForegroundColor White
 Write-Host "   Summarizer:   http://localhost:8006" -ForegroundColor White
 Write-Host "   Legal:        http://localhost:8007" -ForegroundColor White

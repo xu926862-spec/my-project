@@ -1,18 +1,36 @@
 #!/usr/bin/env python3
 """
 OpenClaw Gateway Server
-简单的网关代理服务
+简单的网关代理服务 - 带令牌认证，适合暴露到公网使用
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
-import threading
+import os
+import secrets
 import sys
 
+# 令牌从环境变量读取；没设置就随机生成一个并打印出来，避免网关裸奔
+GATEWAY_TOKEN = os.environ.get("GATEWAY_TOKEN") or secrets.token_urlsafe(24)
+
+
 class GatewayHandler(BaseHTTPRequestHandler):
+    def _check_auth(self):
+        """校验请求头里的令牌，不通过就返回 401"""
+        token = self.headers.get("X-Gateway-Token", "")
+        if not secrets.compare_digest(token, GATEWAY_TOKEN):
+            self.send_response(401)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "unauthorized"}).encode())
+            return False
+        return True
+
     def do_GET(self):
         """处理 GET 请求"""
         if self.path == "/status":
+            if not self._check_auth():
+                return
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
@@ -24,6 +42,8 @@ class GatewayHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         """处理 POST 请求"""
+        if not self._check_auth():
+            return
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length)
 
@@ -38,13 +58,15 @@ class GatewayHandler(BaseHTTPRequestHandler):
         """简化日志输出"""
         sys.stderr.write(f"[Gateway] {args[0]}\n")
 
+
 def start_gateway(host="0.0.0.0", port=8080):
     """启动网关服务"""
     server = HTTPServer((host, port), GatewayHandler)
     print(f"🚀 OpenClaw 网关已启动")
     print(f"   地址: http://{host}:{port}")
     print(f"   状态: http://{host}:{port}/status")
-    print(f"   平台: Linux (Docker/Kubernetes)")
+    print(f"   平台: Linux")
+    print(f"   访问令牌 (X-Gateway-Token 请求头): {GATEWAY_TOKEN}")
     print(f"\n按 Ctrl+C 停止服务\n")
 
     try:
@@ -52,6 +74,7 @@ def start_gateway(host="0.0.0.0", port=8080):
     except KeyboardInterrupt:
         print("\n\n🛑 网关已停止")
         server.shutdown()
+
 
 if __name__ == "__main__":
     start_gateway()

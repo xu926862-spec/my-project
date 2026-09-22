@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
-Claude Local Bot v3.5 - Prototype
-Focus: CLI Interaction, Claude 3.5 API, Code Analysis Skeleton
+Claude Local Bot v3.5 (DeepSeek Integration) - Prototype
+Focus: CLI Interaction, DeepSeek/OpenAI Compatible API, Code Analysis Skeleton
 """
 
 import os
 import sys
 import json
 import argparse
-from typing import Dict, Any, Optional
+import urllib.request
+from typing import Optional
 
 # --- 配置区域 ---
-# 建议正式使用时通过环境变量设置 API KEY
-# export ANTHROPIC_API_KEY='your-api-key-here'
-API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-DEFAULT_MODEL = "claude-3-5-sonnet-20241022" # Claude 3.5 Sonnet
-API_URL = "https://api.anthropic.com/v1/messages"
+# 切换为支持 DeepSeek API (OpenAI 兼容格式)
+# 请在终端设置环境变量: export DEEPSEEK_API_KEY='your-deepseek-api-key'
+API_KEY = os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+
+# DeepSeek 官方 API 基础地址
+API_BASE_URL = "https://api.deepseek.com/v1/chat/completions"
+# 默认使用 DeepSeek 聊天模型 (或者 deepseek-reasoner)
+DEFAULT_MODEL = "deepseek-chat"
 
 # 简单的 ANSI 颜色输出
 GREEN = "\033[92m"
@@ -29,36 +33,36 @@ class ClaudeBotEngine:
         self.api_key = API_KEY
 
     def _call_api(self, messages: list) -> Optional[str]:
-        """内部方法：调用 Anthropic REST API"""
+        """内部方法：调用兼容 OpenAI 格式的 DeepSeek REST API"""
         if not self.api_key:
-            print(f"{RED}[Error] ANTHROPIC_API_KEY not found.{RESET}")
+            print(f"{RED}[Error] 未找到 API Key，请设置 DEEPSEEK_API_KEY 环境变量。{RESET}")
             return None
 
         try:
-            # 这里为了演示原型，使用标准库发起请求。
-            # 实际生产环境强烈建议使用官方 SDK: pip install anthropic
-            import urllib.request
-
             payload = {
                 "model": self.model,
-                "max_tokens": 1024,
                 "messages": messages,
-                "temperature": 0.5
+                "temperature": 0.5,
+                "stream": False
             }
 
             headers = {
                 "Content-Type": "application/json",
-                "x-api-key": self.api_key,
-                "anthropic-version": "2023-06-01"
+                "Authorization": f"Bearer {self.api_key}"
             }
 
-            req = urllib.request.Request(API_URL, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+            req = urllib.request.Request(
+                API_BASE_URL,
+                data=json.dumps(payload).encode('utf-8'),
+                headers=headers,
+                method='POST'
+            )
 
-            print(f"{BLUE}[Info] Calling Claude 3.5 ({self.model})...{RESET}")
+            print(f"{BLUE}[Info] 正在调用 DeepSeek API (模型: {self.model})...{RESET}")
             with urllib.request.urlopen(req) as response:
                 response_data = json.loads(response.read().decode('utf-8'))
-                # 提取回复文本
-                return response_data['content'][0]['text']
+                # 兼容 OpenAI / DeepSeek 的返回结构
+                return response_data['choices'][0]['message']['content']
 
         except Exception as e:
             print(f"{RED}[API Error] {e}{RESET}")
@@ -67,17 +71,18 @@ class ClaudeBotEngine:
     def chat(self, user_input: str):
         """交互模式：自然语言对话"""
         messages = [
+            {"role": "system", "content": "You are Claude Local Bot v3.5, powered by DeepSeek backend engine."},
             {"role": "user", "content": user_input}
         ]
 
         response = self._call_api(messages)
         if response:
-            print(f"\n{GREEN}--- Claude 3.5 回复 ---{RESET}")
+            print(f"\n{GREEN}--- DeepSeek / Bot 回复 ---{RESET}")
             print(response)
-            print(f"{GREEN}-----------------------{RESET}")
+            print(f"{GREEN}--------------------------{RESET}")
 
     def analyze_code_file(self, file_path: str):
-        """分析模式：对指定代码文件进行静态分析（原型骨架）"""
+        """分析模式：对指定代码文件进行静态分析并交给模型审查"""
         if not os.path.exists(file_path):
             print(f"{RED}[Error] 文件不存在: {file_path}{RESET}")
             return
@@ -88,16 +93,11 @@ class ClaudeBotEngine:
             with open(file_path, 'r', encoding='utf-8') as f:
                 code_content = f.read()
 
-            # --- 原型分析逻辑 ---
-            # 1. 基础指标
             lines = code_content.splitlines()
             total_lines = len(lines)
-
-            # 2. 模拟检查（例如：寻找 TODO 注释或潜在的 print 调试）
             todos = [line.strip() for line in lines if "TODO" in line]
             prints = [line.strip() for line in lines if "print(" in line and "#" not in line]
 
-            # 构建分析报告
             analysis_report = {
                 "file": file_path,
                 "total_lines": total_lines,
@@ -106,46 +106,39 @@ class ClaudeBotEngine:
                 "status": "OK (Prototype Scan)"
             }
 
-            print(f"{GREEN}--- 代码分析报告 (原型) ---{RESET}")
+            print(f"{GREEN}--- 代码静态分析报告 ---{RESET}")
             print(json.dumps(analysis_report, indent=2, ensure_ascii=False))
-            print(f"{GREEN}---------------------------{RESET}")
+            print(f"{GREEN}------------------------{RESET}")
 
-            # --- 可选：发送给 Claude 进行深度审查 ---
-            # 询问用户是否需要 AI 审查
-            confirm = input("是否需要发送给 Claude 3.5 进行深度安全/质量审查？(y/n): ")
+            # 自动发送给 DeepSeek 进行深度审查
+            confirm = input("是否需要发送给 DeepSeek 进行深度代码安全与逻辑审查？(y/n): ")
             if confirm.lower() == 'y':
-                prompt = f"请分析以下代码的潜在问题、安全隐患并提出优化建议：\n\n```python\n{code_content}\n```"
+                prompt = f"请作为代码专家，分析以下代码的潜在问题、安全隐患并给出优化后的完整代码：\n\n```python\n{code_content}\n```"
                 self.chat(prompt)
 
         except Exception as e:
             print(f"{RED}[Analysis Error] {e}{RESET}")
 
 def main():
-    # 设置命令行参数解析
-    parser = argparse.ArgumentParser(description="Claude Local Bot v3.5 Prototype CLI")
-
-    # 定义子命令 (Chat 或 Analyze)
+    parser = argparse.ArgumentParser(description="Claude Local Bot v3.5 (DeepSeek Edition) CLI")
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
 
-    # 1. chat 子命令
+    # chat 子命令
     chat_parser = subparsers.add_parser("chat", help="Start interactive chat")
-    chat_parser.add_argument("prompt", nargs="?", help="The message to send to Claude")
+    chat_parser.add_argument("prompt", nargs="?", help="The message to send")
 
-    # 2. analyze 子命令
+    # analyze 子命令
     analyze_parser = subparsers.add_parser("analyze", help="Analyze a code file")
-    analyze_parser.add_argument("file", help="Path to the code file to analyze")
+    analyze_parser.add_argument("file", help="Path to the code file")
 
     args = parser.parse_args()
-
-    # 初始化引擎
     bot = ClaudeBotEngine()
 
     if args.command == "chat":
         if args.prompt:
             bot.chat(args.prompt)
         else:
-            # 交互式循环
-            print("--- Claude Local Bot v3.5 (交互模式) ---")
+            print("--- Claude Local Bot v3.5 (DeepSeek 驱动 - 交互模式) ---")
             print("输入 'exit' 或 'quit' 退出。")
             while True:
                 try:

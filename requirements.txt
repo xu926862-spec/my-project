@@ -1,0 +1,9 @@
+# Enhanced / Ultimate 版机器人依赖
+rich
+python-dotenv
+
+# 可选：自动化模块 (automation_module.py)
+# pyautogui
+
+# 可选：视觉模块截图 (vision_module.py)
+# Pillow

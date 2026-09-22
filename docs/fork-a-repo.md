@@ -112,7 +112,7 @@ GitHub Desktop can help you fork a repository while you work locally.
 4. When GitHub Desktop prompts you to create a fork, follow the dialog to continue.
 5. Choose whether the fork is for contributing back to the upstream repository or for your own work.
 
-For more detailed Desktop-specific screenshots and workflow guidance, see [Fork a repository](https://docs.github.com/en/pull-requests/how-tos/work-with-forks/fork-a-repo).
+For more detailed Desktop-specific screenshots and workflow guidance, see [Cloning and forking repositories from GitHub Desktop](https://docs.github.com/en/desktop/adding-and-cloning-repositories/cloning-and-forking-repositories-from-github-desktop).
 
 ## Cloning your forked repository
 
@@ -151,7 +151,7 @@ After you clone your fork, add the upstream repository as a second remote so you
    git remote -v
    ```
 
-You should see both `origin` and `upstream`:
+You should see both `origin` and `upstream`. For example:
 
 ```shell
 origin    https://github.com/YOUR-USERNAME/YOUR-FORK.git (fetch)
@@ -159,6 +159,8 @@ origin    https://github.com/YOUR-USERNAME/YOUR-FORK.git (push)
 upstream  https://github.com/ORIGINAL-OWNER/ORIGINAL-REPOSITORY.git (fetch)
 upstream  https://github.com/ORIGINAL-OWNER/ORIGINAL-REPOSITORY.git (push)
 ```
+
+By default, `git remote add upstream ...` creates one remote URL, and `git remote -v` shows that same URL for both fetch and push. Even if a push entry appears for `upstream`, you still might not have permission to push to the upstream repository.
 
 > [!NOTE]
 > Once `upstream` is configured, you can fetch changes from the upstream repository and merge or rebase them into your local topic branch or your local copy of the default branch.

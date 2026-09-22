@@ -1,0 +1,18 @@
+🔍 DeepSeek 官方模型列表参考
+
+最新模型 (2024年):
+- deepseek-chat (标准聊天)
+- deepseek-reasoner (推理模型 - 需要更新到3.5)
+- deepseek-coder (代码专家)
+
+推荐DeepSeek 3.5配置:
+- API: https://api.deepseek.com/v1/chat/completions
+- 主模型: deepseek-chat (自动更新到最新版本)
+- 推理: deepseek-reasoner-1215 (DeepSeek最新推理模型)
+- 代码: deepseek-coder-67b (代码分析)
+
+认证:
+- Authorization: Bearer {DEEPSEEK_API_KEY}
+- Content-Type: application/json
+
+OpenAI 兼容格式: ✅ 完全支持

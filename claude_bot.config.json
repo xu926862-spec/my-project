@@ -1,0 +1,52 @@
+{
+  "bot": {
+    "name": "Claude Local Bot",
+    "version": "3.5",
+    "mode": "hybrid",
+    "description": "All-in-One AI Assistant with Code Analysis and Auto-Repair"
+  },
+  "api": {
+    "host": "localhost",
+    "port": 8000,
+    "debug": true,
+    "workers": 4
+  },
+  "models": {
+    "primary": "claude-3.5-sonnet",
+    "fallback": "local-llm",
+    "code_specialist": "claude-3.5-opus",
+    "analysis": "claude-3.5-sonnet"
+  },
+  "capabilities": {
+    "code_analysis": true,
+    "auto_repair": true,
+    "chat": true,
+    "api_server": true,
+    "cli": true,
+    "auto_mode": true
+  },
+  "performance": {
+    "max_context": 200000,
+    "cache_enabled": true,
+    "cache_ttl": 3600,
+    "concurrency": 10
+  },
+  "code_analysis": {
+    "languages": ["python", "javascript", "typescript", "java", "cpp", "go", "rust"],
+    "check_quality": true,
+    "check_security": true,
+    "check_performance": true,
+    "complexity_analysis": true
+  },
+  "auto_repair": {
+    "enabled": true,
+    "aggressive_mode": false,
+    "preserve_logic": true,
+    "auto_format": true
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json",
+    "file": "claude_bot.log"
+  }
+}

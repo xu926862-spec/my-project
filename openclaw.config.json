@@ -1,0 +1,31 @@
+{
+  "performance": {
+    "omp_num_threads": 16,
+    "numexpr_num_threads": 16,
+    "mkl_num_threads": 16,
+    "cuda_visible_devices": "0",
+    "cuda_launch_blocking": "0"
+  },
+  "memory": {
+    "max_memory": "8GB",
+    "cache_size": "4GB",
+    "l1_cache": "512MB",
+    "l2_cache": "2GB",
+    "l3_cache": "2GB"
+  },
+  "transcription": {
+    "batch_size": 4,
+    "num_workers": 8,
+    "prefetch_factor": 2,
+    "use_fp16": true,
+    "timeout": 300,
+    "chunk_size": 30000,
+    "buffer_size": 10000
+  },
+  "models": {
+    "fast": "gemma:2b",
+    "balanced": "phi",
+    "quality": "llama2"
+  },
+  "default_model": "balanced"
+}
